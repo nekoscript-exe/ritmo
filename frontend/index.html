@@ -1,98 +1,12 @@
 <!doctype html>
 <html lang="es-MX">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Organiza tu agenda y registra tus hábitos diarios.">
-  <title>Ritmo · Tu agenda diaria</title>
-  <link rel="stylesheet" href="/styles.css">
-  <script type="module" src="/app.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#f6f8fa" />
+<meta name="description" content="Ritmo: encuentra espacio para lo que importa. Agenda, hábitos y concentración." />
+<title>Ritmo · Tu espacio, a tu ritmo</title>
 </head>
-<body>
-  <header class="bar">
-    <div class="shell brand"><span aria-hidden="true">◒</span> Ritmo <small>Organizador personal</small></div>
-  </header>
-  <main class="shell">
-    <section id="account-panel" class="panel" hidden>
-      <h1>Tu espacio en Ritmo</h1>
-      <p>Entra a tu cuenta para ver tu agenda y tus hábitos.</p>
-      <form id="account-form">
-        <label>Usuario <input name="username" autocomplete="username" pattern="[a-zA-Z0-9_.\-]{3,32}" required></label>
-        <label>Contraseña <input name="password" type="password" autocomplete="current-password" minlength="10" maxlength="128" required></label>
-        <p class="muted">Usuario de 3 a 32 caracteres. Contraseña de al menos 10 caracteres.</p>
-        <button class="primary" value="login">Entrar</button>
-        <button value="register">Crear cuenta</button>
-      </form>
-    </section>
-    <p id="error" role="alert" hidden></p>
-    <div id="workspace" hidden>
-    <button id="logout" type="button">Cerrar sesión</button>
-    <section class="hero" aria-labelledby="page-title">
-      <div>
-        <p class="eyebrow">TU ESPACIO PERSONAL</p>
-        <h1 id="page-title">Mi día</h1>
-        <p id="date-label" class="date-label"></p>
-      </div>
-      <div class="picker">
-        <label for="day">Ver fecha</label>
-        <div class="controls">
-          <button id="previous" type="button" aria-label="Día anterior">‹</button>
-          <input id="day" type="date" min="0001-01-01" max="9999-12-31" required>
-          <button id="next" type="button" aria-label="Día siguiente">›</button>
-          <button id="today" type="button">Hoy</button>
-        </div>
-      </div>
-    </section>
-    <nav class="view-nav controls" aria-label="Vistas de planificación">
-      <button id="daily-view" type="button" aria-pressed="true">Mi día</button>
-      <button id="weekly-view" type="button" aria-pressed="false">Plan semanal</button>
-    </nav>
-    <section id="week-panel" class="panel" hidden aria-labelledby="week-title">
-      <p class="eyebrow">PLANIFICACIÓN</p>
-      <h2 id="week-title">Plan semanal</h2>
-      <p id="week-summary" class="muted" aria-live="polite"></p>
-      <label for="week-mode">Modo de vista</label>
-      <select id="week-mode"><option value="cards">Tarjetas</option><option value="list">Lista</option></select>
-      <div id="week-days" class="week-grid"></div>
-    </section>
-    <div class="dashboard" id="daily-panel">
-      <section class="panel" aria-labelledby="agenda-title">
-        <p class="eyebrow">01 / TIEMPO</p>
-        <h2 id="agenda-title">Agenda</h2>
-        <p class="muted">Reserva tiempo para lo que tienes planeado.</p>
-        <form id="block-form">
-          <label for="block-title">Nombre del bloque</label>
-          <input id="block-title" name="title" placeholder="Ej. Estudiar Docker" maxlength="80" required>
-          <label for="block-category">Categoría</label>
-          <select id="block-category" name="category"></select>
-          <div class="time-fields">
-            <label>Inicio <input name="starts_at" type="time" required></label>
-            <label>Fin <input name="ends_at" type="time" required></label>
-            <button id="save-block" class="primary">Añadir bloque</button>
-            <button id="cancel-edit" type="button" hidden>Cancelar</button>
-          </div>
-        </form>
-        <label for="category-filter">Filtrar agenda</label>
-        <select id="category-filter"><option value="">Todas las categorías</option></select>
-        <ul id="blocks" class="items" aria-label="Bloques del día"></ul>
-      </section>
-      <section class="panel" aria-labelledby="habits-title">
-        <p class="eyebrow">02 / CONSTANCIA</p>
-        <h2 id="habits-title">Hábitos</h2>
-        <p id="progress-label" class="muted" aria-live="polite">Cargando hábitos…</p>
-        <progress id="progress" value="0" max="1" aria-label="Hábitos completados"></progress>
-        <form id="habit-form">
-          <label for="habit-name">Nuevo hábito diario</label>
-          <div class="habit-fields">
-            <input id="habit-name" name="name" placeholder="Ej. Leer 15 minutos" maxlength="80" required>
-            <button class="primary">Añadir</button>
-          </div>
-        </form>
-        <ul id="habits" class="items" aria-label="Hábitos del día"></ul>
-      </section>
-    </div>
-    </div>
-  </main>
-  <footer class="shell">Ritmo · Agenda y hábitos diarios</footer>
-</body>
+<body><div id="root"></div><noscript>Ritmo necesita JavaScript para consultar tu agenda.</noscript>
+<script type="module" src="/src/main.tsx"></script></body>
 </html>

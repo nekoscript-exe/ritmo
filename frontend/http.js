@@ -3,6 +3,8 @@ const fields = {
   title: "Título", day: "Fecha", starts_at: "Hora de inicio",
   ends_at: "Hora de fin", category: "Categoría", done: "Estado del hábito",
   habit_id: "Identificador del hábito", block_id: "Identificador del bloque",
+  task_id: "Identificador de la tarea", description: "Descripción", due_date: "Fecha límite",
+  priority: "Prioridad", completed: "Estado de la tarea", status: "Filtro de estado",
 };
 
 function validationMessage(error) {
@@ -15,7 +17,10 @@ function validationMessage(error) {
   else if (type === "string_pattern_mismatch") message = "usa de 3 a 32 letras, números, puntos, guiones o guiones bajos.";
   else if (type.startsWith("date")) message = "introduce una fecha válida (AAAA-MM-DD).";
   else if (type.startsWith("time")) message = "introduce una hora local válida (HH:MM), sin zona horaria.";
-  else if (type === "literal_error") message = "elige Personal, Trabajo, Estudio, Salud o Descanso.";
+  else if (type === "literal_error") message = error.loc?.at(-1) === "priority"
+    ? "elige baja, media o alta."
+    : error.loc?.at(-1) === "status" ? "elige pendientes o completadas."
+    : "elige Personal, Trabajo, Estudio, Salud o Descanso.";
   else if (type === "bool_parsing" || type === "bool_type") message = "indica si está completado o pendiente.";
   else if (type === "value_error") {
     // Solo mensajes conocidos: nunca mostrar input, contraseñas ni detalles internos.

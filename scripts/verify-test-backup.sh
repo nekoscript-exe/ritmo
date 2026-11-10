@@ -40,6 +40,9 @@ FROM accounts WHERE username = 'backup_verification_fixture';
 INSERT INTO sessions (token_hash, account_id)
 SELECT 'synthetic-backup-session', id FROM accounts WHERE username = 'backup_verification_fixture'
 ON CONFLICT DO NOTHING;
+INSERT INTO tasks (account_id, title, description, priority, category, due_date, completed, completed_at)
+SELECT id, 'Tarea de respaldo', 'Datos sintéticos', 'alta', 'trabajo', DATE '2026-11-09', true, CURRENT_TIMESTAMP
+FROM accounts WHERE username = 'backup_verification_fixture';
 COMMIT;
 SQL
 
@@ -48,6 +51,7 @@ SELECT 'accounts', coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text), '
 SELECT 'habits', coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text), '[]') FROM habits t;
 SELECT 'habit_checks', coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text), '[]') FROM habit_checks t;
 SELECT 'time_blocks', coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text), '[]') FROM time_blocks t;
+SELECT 'tasks', coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text), '[]') FROM tasks t;
 SELECT 'sessions', coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text), '[]') FROM sessions t;
 SELECT 'schema_migrations', coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text), '[]') FROM schema_migrations t;
 SELECT sequencename, last_value FROM pg_sequences WHERE schemaname = 'public' ORDER BY sequencename;

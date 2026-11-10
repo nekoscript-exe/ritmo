@@ -1,0 +1,13 @@
+**
+!frontend/
+!frontend/**
+!nginx/
+!nginx/default.conf
+!.dockerignore
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+**/*.log
