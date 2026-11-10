@@ -1,0 +1,48 @@
+# Secretos y configuración local
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+.aws/
+.codex/
+
+# Python y herramientas
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage*
+htmlcov/
+coverage.xml
+
+# Dependencias y artefactos del frontend
+node_modules/
+coverage/
+dist/
+
+# Temporales, editores y sistema operativo
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.DS_Store
+.idea/
+.vscode/
+
+# Respaldos y datos locales (las migraciones SQL se conservan)
+backups/
+*.dump
+*.backup
+*.bak
+*.sql.gz
+*.sql.zst
+postgres_data/
+pgdata/

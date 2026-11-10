@@ -1,0 +1,54 @@
+# Archivo independiente: NO combinar con compose.yaml mediante varios -f.
+name: ritmo-tests
+services:
+  db-test:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ritmo_test
+      POSTGRES_USER: ritmo_test
+      POSTGRES_PASSWORD: test-only-not-a-production-secret
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U ritmo_test -d ritmo_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    networks: [test-only]
+
+  tests:
+    build:
+      context: ./api
+      target: tests
+    environment:
+      RITMO_TESTING: "1"
+      PGHOST: db-test
+      PGPORT: "5432"
+      PGDATABASE: ritmo_test
+      PGUSER: ritmo_test
+      PGPASSWORD: test-only-not-a-production-secret
+      PYTHONDONTWRITEBYTECODE: "1"
+    depends_on:
+      db-test:
+        condition: service_healthy
+    networks: [test-only]
+
+  backup-check:
+    image: postgres:16-alpine
+    environment:
+      PGHOST: db-test
+      PGPORT: "5432"
+      PGDATABASE: ritmo_test
+      PGUSER: ritmo_test
+      PGPASSWORD: test-only-not-a-production-secret
+    volumes:
+      - ./scripts/verify-test-backup.sh:/checks/verify-test-backup.sh:ro
+    entrypoint: ["sh", "/checks/verify-test-backup.sh"]
+    depends_on:
+      tests:
+        condition: service_completed_successfully
+    networks: [test-only]
+
+networks:
+  test-only:
+    internal: true
