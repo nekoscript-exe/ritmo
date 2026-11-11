@@ -43,6 +43,20 @@ ON CONFLICT DO NOTHING;
 INSERT INTO tasks (account_id, title, description, priority, category, due_date, completed, completed_at)
 SELECT id, 'Tarea de respaldo', 'Datos sintéticos', 'alta', 'trabajo', DATE '2026-11-09', true, CURRENT_TIMESTAMP
 FROM accounts WHERE username = 'backup_verification_fixture';
+WITH f AS (
+  INSERT INTO focus_sessions (account_id, request_id, planned_seconds, duration_seconds, state, started_at, ended_at)
+  SELECT id, '00000000-0000-4000-8000-000000000001', 900, 600, 'completed',
+         TIMESTAMPTZ '2026-11-09 10:00:00+00', TIMESTAMPTZ '2026-11-09 10:10:00+00'
+  FROM accounts WHERE username = 'backup_verification_fixture'
+  ON CONFLICT (account_id, request_id) DO NOTHING RETURNING id
+)
+INSERT INTO focus_segments (session_id, started_at, ended_at)
+SELECT id, TIMESTAMPTZ '2026-11-09 10:00:00+00', TIMESTAMPTZ '2026-11-09 10:10:00+00' FROM f;
+INSERT INTO focus_requests (account_id, request_id, session_id, operation, payload)
+SELECT f.account_id, f.request_id, f.id, 'start', '{"planned_seconds":900,"task_id":null}'::jsonb
+FROM focus_sessions f JOIN accounts a ON a.id = f.account_id
+WHERE f.request_id = '00000000-0000-4000-8000-000000000001' AND a.username = 'backup_verification_fixture'
+ON CONFLICT DO NOTHING;
 COMMIT;
 SQL
 
@@ -54,6 +68,9 @@ SELECT 'time_blocks', coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text)
 SELECT 'tasks', coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text), '[]') FROM tasks t;
 SELECT 'sessions', coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text), '[]') FROM sessions t;
 SELECT 'schema_migrations', coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text), '[]') FROM schema_migrations t;
+SELECT 'focus_sessions', coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text), '[]') FROM focus_sessions t;
+SELECT 'focus_segments', coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text), '[]') FROM focus_segments t;
+SELECT 'focus_requests', coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text), '[]') FROM focus_requests t;
 SELECT sequencename, last_value FROM pg_sequences WHERE schemaname = 'public' ORDER BY sequencename;
 SQL
 

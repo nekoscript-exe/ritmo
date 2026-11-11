@@ -1,6 +1,6 @@
 # Ritmo
 
-**Rama de desarrollo 2.1:** incluye la migración pendiente `004_tasks.sql`. Verificarla
+**Rama de desarrollo 2.3:** incluye las migraciones pendientes de tareas y `005_focus.sql`. Verificarla
 primero con los Compose de pruebas indicados al final. No reiniciar ni reconstruir la
 API de la instalación principal sin revisar la migración y el respaldo.
 
@@ -53,7 +53,7 @@ Para identificar el volumen, ejecuta `docker volume inspect ritmo_postgres_data`
 | `frontend/` | Vista diaria, formularios y llamadas a la API. Vite compila el dashboard React y la interfaz anterior; Nginx sirve los archivos de dist. |
 | `api/main.py` | Rutas de la API y reglas de validación. |
 | `api/db.py` | Conexión a PostgreSQL y ejecución de migraciones. |
-| `api/migrations/` | Cambios de esquema ordenados por nombre. El siguiente número disponible es `005`. No edites migraciones ya aplicadas. Cada migración aplicada queda registrada en `schema_migrations`. |
+| `api/migrations/` | Cambios de esquema ordenados por nombre. El siguiente número disponible es `006`. No edites migraciones ya aplicadas. Cada migración aplicada queda registrada en `schema_migrations`. |
 | `nginx/default.conf` | Configuración del sitio y del proxy. |
 | `compose.yaml` | Servicios, variables, verificaciones de disponibilidad y volumen. |
 
@@ -227,9 +227,9 @@ excluye secretos, dependencias locales y respaldos mediante `.dockerignore`.
 - Búsqueda de títulos de bloques y nombres de hábitos de la fecha seleccionada.
 - Exportación JSON de los hábitos y bloques cargados de ese día; no es un respaldo de base
   de datos. El archivo puede contener información privada de la agenda.
-- Focus local: 15, 25, 45 o 60 minutos, iniciar, pausar, reanudar y reiniciar. Calcula el
-  tiempo contra una fecha límite y se actualiza al volver a la pestaña. No registra sesiones
-  en la API, no persiste al recargar y no garantiza una alarma si se cierra el navegador.
+- Focus (2.3): sesiones persistentes con pausas, recuperación y cierre confirmado por la
+  API; el tiempo local del navegador no se utiliza como registro estadístico. Consulta
+  la sección 2.3 antes de reconstruir una API con datos existentes.
 - Tareas (Ritmo 2.1): CRUD real mediante `/api/tasks`, con filtros, captura rápida y progreso
   diario. Modelo independiente de los bloques. Consulta las instrucciones de la sección 2.1
   antes de reiniciar cualquier API: hay una nueva migración pendiente de revisión.
@@ -699,3 +699,65 @@ Limitaciones: no hay arrastrar/soltar, recurrencias, calendario compartido, inte
 con calendarios del sistema, alarmas nativas ni sincronización offline. Las fechas límite
 no tienen hora; los bloques conservan su horario local flotante y no cruzan medianoche.
 La revisión en navegador y la ejecución de PostgreSQL temporal siguen pendientes.
+
+
+## Ritmo 2.3 — estadísticas, hábitos y Focus persistente
+
+[Contrato, fórmulas, zonas horarias y protocolo de Focus](docs/estadisticas-focus.md).
+La nueva migración `005_focus.sql` añade sesiones, segmentos y claves de petición sin
+modificar los esquemas anteriores ni inventar fechas de creación de hábitos.
+
+Estadísticas ofrece periodos semanales/mensuales, tarjetas, gráficas, actividad diaria,
+porcentajes, tareas vencidas, tiempo planeado por categoría, rachas de hábitos e historial
+Focus. Tareas se agrupan por vencimiento y estado actual; los hábitos son el conjunto
+actual evaluado hasta hoy. Las rachas son del periodo, no récords históricos globales.
+Los minutos Focus se reparten por los segmentos y la zona IANA elegida, separando sesiones
+completadas de interrumpidas. Las activas/pausadas no contribuyen todavía.
+
+Focus admite iniciar, pausar, reanudar, finalizar y cancelar, con tarea opcional. Recarga
+la sesión del servidor al volver a la aplicación; no necesita una pestaña abierta para
+calcular el tiempo. Al alcanzar el objetivo pide confirmar la finalización: no añade
+minutos automáticamente. UUID, versiones, bloqueos y una sola sesión activa por cuenta
+protegen frente a duplicados. Una petición sin respuesta se reintenta con la misma clave.
+No hay logging offline ni una nueva infraestructura nativa.
+
+Endpoints nuevos: `GET/POST /api/focus`, `GET /api/focus/active`, `GET/PATCH/DELETE
+/api/focus/{id}`, `POST /api/focus/{id}/{pause|resume|finish|cancel}` y `GET
+/api/statistics`. La retirada del historial es lógica y cambia las estadísticas visibles.
+Las lecturas están acotadas a 31 días y tienen `no-store`; el propietario se comprueba en
+cada operación y relación. Consulte el documento antes de interpretar los resultados.
+
+### Comprobaciones
+
+```sh
+npm --prefix frontend test
+npm --prefix frontend run build
+python3 -B -m unittest discover -s tests -p 'test_metrics.py'
+```
+
+Resultado local: **56 pruebas frontend, 10 de lógica pura Python y build TypeScript
+aprobados**. Sintaxis Python/shell y configuración Compose válidas. Hay **24 nuevos casos
+PostgreSQL preparados, sin ejecutar** porque Docker deniega acceso al socket. No se
+consideran aprobadas ni la migración ni la restauración ni la revisión visual en navegador.
+
+Para comprobar únicamente datos sintéticos, sin tocar la instalación principal:
+
+```sh
+docker compose -f compose.test.yaml -f compose.dashboard-test.yaml stop api-preview
+docker compose -f compose.test.yaml build tests
+docker compose -f compose.test.yaml up -d --wait db-test
+docker compose -f compose.test.yaml run --rm --no-deps tests
+docker compose -f compose.test.yaml run --rm --no-deps backup-check
+```
+
+Continuar solo si cada comando termina con éxito. Después, con el puerto libre:
+
+```sh
+docker compose -f compose.test.yaml -f compose.dashboard-test.yaml up --build -d --wait web-preview
+```
+
+Abrir `http://127.0.0.1:5180` con una cuenta de prueba. Comprobar pausas y recuperación tras
+recarga, cerrar/cancelar, comparar minutos con estadísticas, cambiar zona y verificar otra
+cuenta. No ejecutar `up --build` del Compose principal: la nueva migración debe revisarse
+antes de reiniciar su API. No se han modificado datos reales, eliminado volúmenes ni hecho
+commits o push.

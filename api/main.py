@@ -10,6 +10,8 @@ from auth import account, router
 from db import connect, migrate
 from tasks import router as tasks_router
 from calendar_routes import router as calendar_router
+from focus_routes import router as focus_router
+from statistics_routes import router as statistics_router
 
 Label = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)]
 Account = Annotated[int, Depends(account)]
@@ -53,6 +55,8 @@ app = FastAPI(title="Ritmo", lifespan=lifespan, docs_url="/api/docs",
 app.include_router(router)
 app.include_router(tasks_router)
 app.include_router(calendar_router)
+app.include_router(focus_router)
+app.include_router(statistics_router)
 
 
 @app.get("/api/health")

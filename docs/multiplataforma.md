@@ -164,3 +164,33 @@ Firmar paquetes y actualizaciones; revisar el backend antes de exponerlo públic
 
 Las etapas 3–7 son propuestas pendientes, no funciones operativas ni decisiones de proveedor
 cerradas. No se han añadido runtimes, servicios externos o dependencias nativas en 2.2.
+
+## Decisiones añadidas en 2.3: Focus y métricas
+
+Focus se separa en representación (`FocusTimer`), controlador (`useFocusSession`), servicio
+(`focusService`) y funciones puras de visualización. PostgreSQL conserva estado, segmentos,
+versión y UUID de petición. Los ticks de la WebView solo repintan: suspender/cerrar la app
+no pierde la sesión ni define su duración. Se recupera mediante `/focus/active`.
+
+Por diseño no se declara completada una sesión sin confirmación de la API. El tiempo
+corrido se limita a la duración elegida; la recuperación permite confirmar o cancelar.
+Una app suspendida no garantiza alarmas, y no se han añadido notificaciones nativas.
+La duración confirma tiempo transcurrido según el reloj del servidor, no atención humana.
+
+UUID por cuenta y control de versión preparan reintentos/sincronización, pero **no forman
+un sistema offline**. Actualmente las peticiones inciertas se conservan solo en memoria;
+una futura cola local necesitará partición por identidad, cifrado si corresponde,
+confirmación durable y política de conflictos. Nunca reproducir operaciones de una cuenta
+al iniciar sesión con otra. No hay tokens en localStorage ni plugins nativos nuevos.
+
+Los informes reciben zona IANA explícita; Focus usa instantes y los hábitos/tareas/bloques
+mantienen sus fechas locales anteriores. La zona todavía no se guarda como preferencia
+por cuenta. Acordar esa preferencia y versiones compatibles de reglas IANA antes de
+comparar informes entre dispositivos. Rachas y denominadores de hábitos se presentan
+como análisis del conjunto actual dentro del periodo, sin inferir fechas de alta ausentes.
+
+La retirada de Focus es lógica y conserva claves de idempotencia; un futuro sincronizador
+deberá tratarla como tombstone y respetar la exclusión de métricas. Aún falta definir
+retención, exportación de historial y reconciliación offline. Véanse el protocolo y las
+limitaciones en [estadisticas-focus.md](estadisticas-focus.md). No cambia la evaluación
+previa de Tauri/Capacitor y no se han instalado ni configurado en esta entrega.

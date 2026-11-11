@@ -11,6 +11,7 @@ import { Habits } from './components/Habits';
 import { Agenda } from './components/Agenda';
 import { TasksPanel } from './components/TasksPanel';
 import { CalendarWorkspace } from './components/calendar/CalendarWorkspace';
+import { StatisticsPanel } from './components/statistics/StatisticsPanel';
 const navigation: [
     Section,
     string
@@ -21,6 +22,7 @@ export function App() {
     const [day, setDay] = useState(localDay);
     const [now, setNow] = useState(new Date());
     const [epoch, setEpoch] = useState(0);
+    const [statisticsRevision, setStatisticsRevision] = useState(0);
     const [result, setResult] = useState<{
         day: string;
         data: DayData;
@@ -157,9 +159,9 @@ export function App() {
         setDay(e.target.value); }}/></label></div>{data ? <Agenda day={day} blocks={data.blocks} busy={disabled} query={query} mutate={mutate}/> : <div className="card loading-card" role="status">{loading ? 'Cargando agenda…' : 'La agenda no está disponible. Reintenta la consulta.'}</div>}</>}
         {section === 'Calendario' && <CalendarWorkspace day={day} view={calendarView} onDayChange={setDay} onViewChange={setCalendarView} blocked={busy || loading} onBusyChange={setBusy} onUnauthorized={expire} onChanged={() => setEpoch(v => v + 1)}/>}
         {(isDashboard || section === 'Hábitos') && (data ? <Habits day={day} habits={data.habits} busy={disabled} query={query} mutate={mutate}/> : <div className="card loading-card" role="status">{loading ? 'Cargando hábitos…' : 'Los hábitos no están disponibles.'}</div>)}
-        {section === 'Estadísticas' && <section className="card stats-card"><span className="round-icon"><Icon name="stats"/></span><h2>Tu constancia, día a día</h2><p className="muted">Resumen de la fecha seleccionada, calculado con tus datos.</p>{data ? <div className="stats-values"><div><strong>{data.blocks.length}</strong><span>bloques de horario</span></div><div><strong>{completed}/{data.habits.length}</strong><span>hábitos completados</span></div></div> : <p>Resumen no disponible.</p>}<p className="tiny muted">Las tendencias y el historial estadístico están pendientes.</p></section>}
+        {section === 'Estadísticas' && <StatisticsPanel day={day} blocked={busy || loading} revision={statisticsRevision} onUnauthorized={expire} onBusyChange={setBusy}/>}
         {section === 'Focus' && <section className="card focus-intro"><span className="eyebrow">BAJA EL RUIDO</span><h2>Haz una pausa.<br />Encuentra tu concentración.</h2><p className="muted">Elige una duración en el temporizador y dedica este momento a una sola cosa.</p><Landscape /></section>}
-      </div><aside className={`right-column ${section === 'Calendario' ? 'calendar-aux' : ''}`} aria-label="Calendario y concentración"><Calendar selected={day} disabled={busy || loading} onSelect={date => { setDay(date); if (isDashboard) { setCalendarView('day'); setSection('Calendario'); } }}/><FocusTimer /><div className="daily-note"><Icon name="leaf" size={22}/><p>«No se trata de tener tiempo.<br />Se trata de hacer espacio.»</p><span>ENCUENTRA TU RITMO</span></div></aside></div>
+      </div><aside className={`right-column ${section === 'Calendario' ? 'calendar-aux' : ''}`} aria-label="Calendario y concentración"><Calendar selected={day} disabled={busy || loading} onSelect={date => { setDay(date); if (isDashboard) { setCalendarView('day'); setSection('Calendario'); } }}/><FocusTimer blocked={busy || loading} onUnauthorized={expire} onBusyChange={setBusy} onChanged={() => setStatisticsRevision(v => v + 1)}/><div className="daily-note"><Icon name="leaf" size={22}/><p>«No se trata de tener tiempo.<br />Se trata de hacer espacio.»</p><span>ENCUENTRA TU RITMO</span></div></aside></div>
       <footer className="page-footer"><span>Hecho para avanzar con calma.</span><span>Ritmo · Tu espacio, a tu ritmo.</span></footer>
     </main></div></div>;
 }

@@ -1,5 +1,5 @@
 import { requestJSON } from '../http.js';
-import type { BlockInput, DayData, Task, TaskInput, TaskFilters, TaskPage, TaskProgress, CalendarData } from './models';
+import type { BlockInput, DayData, Task, TaskInput, TaskFilters, TaskPage, TaskProgress, CalendarData, FocusSnapshot, FocusStart, FocusCommand, FocusAction, FocusPage, StatisticsData } from './models';
 export function taskQuery(filters: TaskFilters): string {
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(filters)) {
@@ -8,6 +8,12 @@ export function taskQuery(filters: TaskFilters): string {
     return params.toString();
 }
 export const api = {
+    focusActive: (): Promise<FocusSnapshot> => requestJSON('/focus/active', 'GET', undefined),
+    focusStart: (body: FocusStart): Promise<FocusSnapshot> => requestJSON('/focus', 'POST', body),
+    focusCommand: (id: number, action: FocusAction, body: FocusCommand): Promise<FocusSnapshot> => requestJSON(`/focus/${id}/${action}`, 'POST', body),
+    focusHistory: (start: string, end: string, timezone: string, offset = 0): Promise<FocusPage> => requestJSON(`/focus?${new URLSearchParams({ start, end, timezone, offset: String(offset), limit: '50' })}`, 'GET', undefined),
+    focusDelete: (session: import('./models').FocusSession, request_id: string): Promise<void> => requestJSON(`/focus/${session.id}?${new URLSearchParams({ request_id, expected_version: String(session.version) })}`, 'DELETE', undefined),
+    statistics: (start: string, end: string, timezone: string): Promise<StatisticsData> => requestJSON(`/statistics?${new URLSearchParams({ start, end, timezone })}`, 'GET', undefined),
     calendar: (start: string, end: string): Promise<CalendarData> => requestJSON(`/calendar?${new URLSearchParams({ start, end })}`, 'GET', undefined),
     tasks: (filters: TaskFilters = {}): Promise<TaskPage> => requestJSON(`/tasks?${taskQuery(filters)}`, 'GET', undefined),
     task: (id: number): Promise<Task> => requestJSON(`/tasks/${id}`, 'GET', undefined),

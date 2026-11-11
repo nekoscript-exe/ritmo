@@ -26,12 +26,12 @@ usuario de pruebas. No acepta variables alternativas de conexión.
 
 El procedimiento:
 
-1. Añade una cuenta, un hábito, una marca, un bloque, una tarea y una sesión sintéticos.
+1. Añade una cuenta, un hábito, una marca, un bloque, una tarea, una sesión de acceso y un registro Focus con segmento y clave de petición sintéticos.
 2. Genera un archivo de formato custom con `pg_dump`, con permisos privados.
 3. Comprueba que `pg_restore` puede leer su catálogo.
 4. Crea una base temporal `ritmo_restore_<pid>` en el servidor de pruebas.
 5. Restaura con `--single-transaction --exit-on-error`, sin `--clean`.
-6. Compara todas las filas de las siete tablas (incluida `tasks` desde Ritmo 2.1), además de los valores de secuencias.
+6. Compara todas las filas de las diez tablas (incluidas tareas, sesiones Focus, segmentos y claves de petición), además de los valores de secuencias.
 7. Elimina únicamente la base temporal que acaba de crear y sus archivos temporales.
 
 No se imprimen las filas, hashes ni sesiones. No hay escritores concurrentes

@@ -33,8 +33,8 @@ test('calendario: botones etiquetados, selección y navegación mensual', () => 
 });
 test('Focus: duración, estado inicial y controles accesibles sin simular persistencia', () => {
   const html = renderToStaticMarkup(<FocusTimer/>);
-  assert.match(html, /25:00/); assert.match(html, /Reiniciar temporizador/);
-  assert.match(html, /Iniciar/); assert.match(html, /no se guarda al salir/);
+  assert.match(html, /25:00/); assert.match(html, /Actualizar estado/);
+  assert.match(html, /Iniciar/); assert.match(html, /Consultando sesión en el servidor/);
   assert.match(html, /60 minutos/);
 });
 test('hábitos: renderiza datos recibidos y cumplimiento, escapando HTML', () => {

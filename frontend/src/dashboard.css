@@ -1764,3 +1764,41 @@ textarea { font: inherit; color: inherit; border: 1px solid #dfe8e3; border-radi
 }
 
 .week-heading-grid { overflow-y: hidden; scrollbar-gutter: stable; }
+/* Estadísticas y Focus persistente: mismas tarjetas y paleta. */
+.statistics-module { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+.statistics-filters fieldset { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 18px 0; }
+.statistics-filters label { font-size: 11px; flex: 1 1 140px; }
+.statistics-filters input, .statistics-filters select { width: 100%; }
+.metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap: 14px; margin-top: 20px; }
+.metric-card { background: #f5f9f6; border: 1px solid #e3eee7; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.metric-card > span { font-size: 11px; color: #56745f; }
+.metric-card > strong { font-size: 25px; color: #2a7253; font-variant-numeric: tabular-nums; }
+.metric-card > small { font-size: 10px; color: #6b7f70; }
+.statistics-charts { display: flex; flex-direction: column; gap: 28px; }
+.statistics-chart { margin: 0; min-width: 0; }
+.statistics-chart figcaption { font-size: 14px; font-weight: 600; margin-bottom: 15px; }
+.bar-chart { display: flex; flex-direction: column; gap: 9px; }
+.chart-row { display: grid; grid-template-columns: minmax(70px, 1fr) minmax(0, 3fr) minmax(62px, auto); align-items: center; gap: 10px; font-size: 10px; }
+.chart-row > span, .chart-row > strong { overflow-wrap: anywhere; }
+.chart-track { height: 9px; background: #edf3ee; border-radius: 5px; overflow: hidden; }
+.chart-track > div { height: 100%; background: #68aa87; border-radius: 5px; }
+.habit-streaks > p, .daily-activity > p, .focus-history > p { margin-top: 10px; }
+.habit-streaks > article { padding: 18px 0; border-bottom: 1px solid var(--line); }
+.habit-streaks h3 { font-size: 13px; overflow-wrap: anywhere; }
+.habit-streaks article p { font-size: 11px; color: #657d6c; margin-top: 7px; }
+.habit-history { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px; }
+.habit-history > span { width: 22px; height: 22px; border-radius: 5px; text-align: center; font-size: 12px; }
+.history-done { background: #d9efe0; color: #256c46; }
+.history-missed { background: #eff1ed; color: #6e7c70; }
+.history-future { background: #fafbf9; color: #8a958b; }
+.daily-activity-list { margin-top: 15px; }
+.daily-activity-list > article { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 10px; border-top: 1px solid var(--line); padding: 10px 0; }
+.daily-activity-list time { font-weight: 600; }
+.focus-history li { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); padding: 14px 0; gap: 12px; }
+.focus-history li > div { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.focus-history li span { font-size: 10px; color: #6a7d6e; overflow-wrap: anywhere; }
+.focus-task-picker { margin-top: 16px; font-size: 10px; }
+.focus-task-picker select { width: 100%; font-size: 11px; }
+.focus-error { color: #8b3d35; font-size: 11px; margin: 10px 0; }
+.focus-card .timer-actions { flex-wrap: wrap; }
+@media(max-width: 520px) { .chart-row { grid-template-columns: 72px minmax(0, 1fr) 60px; gap: 7px; font-size: 9px; } .metric-card { padding: 14px; } }

@@ -2,7 +2,7 @@ FROM python:3.13-slim AS runtime
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY auth.py db.py main.py tasks.py calendar_routes.py ./
+COPY auth.py db.py main.py tasks.py calendar_routes.py focus_routes.py focus_domain.py statistics_routes.py metrics.py ./
 COPY migrations ./migrations
 USER 10001
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
