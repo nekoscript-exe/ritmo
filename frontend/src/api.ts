@@ -18,6 +18,7 @@ export const api = {
     account: (action: 'login' | 'register', username: string, password: string): Promise<void> => requestJSON(`/account/${action}`, 'POST', { username, password }),
     logout: (): Promise<void> => requestJSON('/account/logout', 'POST', undefined),
     addHabit: (name: string): Promise<unknown> => requestJSON('/habits', 'POST', { name }),
+    updateHabit: (id: number, name: string): Promise<void> => requestJSON(`/habits/${id}`, 'PUT', { name }),
     checkHabit: (id: number, day: string, done: boolean): Promise<void> => requestJSON(`/habits/${id}/checks/${day}`, 'PUT', { done }),
     deleteHabit: (id: number): Promise<void> => requestJSON(`/habits/${id}`, 'DELETE', undefined),
     saveBlock: (block: BlockInput, id?: number): Promise<unknown> => requestJSON(id ? `/blocks/${id}` : '/blocks', id ? 'PUT' : 'POST', block),

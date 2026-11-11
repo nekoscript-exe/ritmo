@@ -25,3 +25,13 @@ test('sesión expirada se propaga con status, sin convertirla en datos vacíos',
   t.mock.method(globalThis, 'fetch', async () => Response.json({ detail: 'Inicia sesión.' }, { status: 401 }));
   await assert.rejects(api.day('2026-11-09'), isUnauthorized);
 });
+
+test('editar hábito conserva el identificador y envía solo el nombre', async t => {
+  t.mock.method(globalThis, 'fetch', async (path: string, options: RequestInit) => {
+    assert.equal(path, '/api/habits/7');
+    assert.equal(options.method, 'PUT');
+    assert.deepEqual(JSON.parse(String(options.body)), { name: 'Leer más' });
+    return new Response(null, { status: 204 });
+  });
+  assert.equal(await api.updateHabit(7, 'Leer más'), undefined);
+});

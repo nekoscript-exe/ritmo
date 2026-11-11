@@ -110,6 +110,14 @@ def delete_habit(habit_id: ItemId, owner: Account):
             raise HTTPException(404, "Hábito no encontrado.")
 
 
+@app.put("/api/habits/{habit_id}", status_code=204)
+def update_habit(habit_id: ItemId, habit: Habit, owner: Account):
+    with connect() as db:
+        if not db.execute("UPDATE habits SET name = %s WHERE id = %s AND account_id = %s",
+                          (habit.name, habit_id, owner)).rowcount:
+            raise HTTPException(404, "Hábito no encontrado.")
+
+
 @app.post("/api/blocks", status_code=201)
 def create_block(block: Block, owner: Account):
     with connect() as db:

@@ -16,7 +16,9 @@ test('tareas: captura rápida, filtros y carga sin inventar resultados', () => {
   assert.match(html, /Prioridad<select/);
   assert.match(html, /Cualquier fecha/);
   assert.ok(!html.includes('Próximamente'));
+  assert.ok(!html.includes('class="block-form task-editor"'));
   assert.ok(!html.includes('type="checkbox"'));
+  assert.equal((html.match(/<form/g) || []).length, 1); // Solo captura rápida.
 });
 test('tareas: estado vacío real y filtro de cumplimiento separados de bloques', () => {
   const html = renderToStaticMarkup(<TaskList tasks={[]} disabled={false} onEdit={() => {}} onDelete={() => {}} onComplete={() => {}}/>);
@@ -39,11 +41,15 @@ test('hábitos: renderiza datos recibidos y cumplimiento, escapando HTML', () =>
   const html = renderToStaticMarkup(<Habits day="2026-11-09" habits={[{ id: 7, name: '<script>private</script>', done: true }]} busy={false} query="" mutate={async () => {}}/>);
   assert.match(html, /1 de 1 completados/); assert.match(html, /checked/);
   assert.match(html, /&lt;script&gt;private/); assert.ok(!html.includes('<script>private'));
+  assert.match(html, /Nuevo hábito/);
+  assert.match(html, /Editar hábito/);
+  assert.ok(!html.includes('<form'));
 });
 test('agenda: conserva la distinción entre bloque horario y tarea', () => {
   const html = renderToStaticMarkup(<Agenda day="2026-11-09" blocks={[{ id: 1, title: 'Bloque recibido', starts_at: '09:00:15', ends_at: '10:00:30', category: 'trabajo' }]} busy={false} query="" mutate={async () => {}}/>);
   assert.match(html, /Bloque recibido/); assert.match(html, /09:00/);
   assert.match(html, /Editar Bloque recibido/); assert.match(html, /tareas se gestionan por separado/);
+  assert.ok(!html.includes('<form'));
   assert.ok(!html.includes('type="checkbox"'));
 });
 test('login: autocomplete, etiquetas y alternativa legacy', () => {

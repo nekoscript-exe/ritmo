@@ -753,20 +753,6 @@ legend {
   display:flex;
   gap:1px
 }
-.block-form {
-  margin-top:20px;
-  background:#f7faf8;
-  padding:18px;
-  border-radius:12px
-}
-.block-form label {
-  font-size:11px;
-  flex:1
-}
-.block-form input,.block-form select {
-  width:100%;
-  font-size:12px
-}
 .form-row {
   display:flex;
   gap:10px;
@@ -1635,10 +1621,9 @@ textarea { font: inherit; color: inherit; border: 1px solid #dfe8e3; border-radi
 .task-progress > div { display: flex; justify-content: space-between; font-size: 11px; color: #49765e; margin-bottom: 7px; }
 .task-progress > p { margin-top: 7px; }
 .task-filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; margin: 18px 0; }
-.task-filters label, .task-editor label, .task-date-picker { font-size: 11px; }
+.task-filters label, .task-date-picker { font-size: 11px; }
 .task-filters select { width: 100%; font-size: 11px; }
 .task-date-picker { max-width: 250px; }
-.task-editor label { margin-bottom: 12px; }
 .task-list > li { position: relative; padding: 17px 68px 17px 0; border-bottom: 1px solid var(--line); }
 .task-list > li:last-child { border-bottom: 0; }
 .task-check { flex-direction: row; gap: 11px; align-items: center; overflow-wrap: anywhere; font-size: 12px; }
@@ -1651,3 +1636,39 @@ textarea { font: inherit; color: inherit; border: 1px solid #dfe8e3; border-radi
 .task-pagination { display: flex; gap: 16px; }
 @media(max-width: 930px) { .task-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media(max-width: 520px) { .task-list > li { padding-right: 39px; } .task-meta { font-size: 10px; } }
+/* Editores flotantes: showModal mantiene el fondo inerte y el foco dentro del diálogo. */
+.ritmo-modal {
+  position: fixed;
+  inset: 0;
+  height: fit-content;
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100vh - 40px);
+  max-height: calc(100dvh - 40px);
+  margin: auto;
+  padding: 26px;
+  border: 1px solid #e2ebe5;
+  border-radius: 18px;
+  background: #fff;
+  color: #263c36;
+  box-shadow: 0 24px 90px #16362d35;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.ritmo-modal:not([open]) { display: none; }
+.ritmo-modal[open] { animation: modal-enter .16s ease-out; }
+.ritmo-modal::backdrop { background: #233d3659; backdrop-filter: blur(3px); }
+.ritmo-modal-small { width: min(420px, calc(100vw - 32px)); }
+.modal-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 12px; }
+.modal-heading h2 { font-size: 21px; }
+.modal-close { min-width: 40px; min-height: 40px; font-size: 27px; line-height: 1; }
+.modal-help { margin-bottom: 22px; }
+.modal-form label { margin-bottom: 16px; font-size: 12px; }
+.modal-form input, .modal-form select, .modal-form textarea { width: 100%; }
+.modal-form .form-row { align-items: start; margin: 0; }
+.modal-form .form-row > label { min-width: 0; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 20px; align-items: center; padding-top: 20px; margin-top: 12px; border-top: 1px solid var(--line); }
+.modal-actions button { min-height: 40px; }
+.modal-form .alert { margin-bottom: 20px; }
+.habit-actions { display: flex; flex-shrink: 0; }
+@keyframes modal-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@media(max-width: 520px) { .ritmo-modal { padding: 22px 20px; max-height: calc(100dvh - 24px); } .modal-heading h2 { font-size: 19px; } }

@@ -60,6 +60,7 @@ def test_all_business_routes_require_session(client, block_data, token):
     requests = [
         ("GET", "/api/days/2026-11-09", None), ("GET", "/api/weeks/2026-11-09", None),
         ("POST", "/api/habits", {"name": "Leer"}),
+        ("PUT", "/api/habits/1", {"name": "Leer más"}),
         ("PUT", "/api/habits/1/checks/2026-11-09", {"done": True}),
         ("DELETE", "/api/habits/1", None), ("POST", "/api/blocks", block_data),
         ("PUT", "/api/blocks/1", block_data), ("DELETE", "/api/blocks/1", None),

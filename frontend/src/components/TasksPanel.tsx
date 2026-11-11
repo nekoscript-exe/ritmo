@@ -5,6 +5,7 @@ import type { Category, Priority, Task, TaskFilters, TaskInput } from '../models
 import { loadTaskSnapshot } from '../taskService';
 import type { TaskSnapshot } from '../taskService';
 import { Icon } from './Icon';
+import { TaskEditor } from './TaskEditor';
 
 interface Props {
     day: string;
@@ -28,6 +29,7 @@ export function TasksPanel({ day, dashboard, blocked, onUnauthorized, onBusyChan
     const [error, setError] = useState('');
     const [notice, setNotice] = useState('');
     const [writing, setWriting] = useState(false);
+    const [editorError, setEditorError] = useState('');
     const [editor, setEditor] = useState<{ id?: number; draft: TaskInput } | null>(null);
     const lock = useRef(false);
     const writeConfirmed = useRef(false);
@@ -57,14 +59,14 @@ export function TasksPanel({ day, dashboard, blocked, onUnauthorized, onBusyChan
         return () => { active = false; };
     }, [key, revision]);
 
-    async function change(operation: () => Promise<unknown>, onSuccess?: () => void) {
+    async function change(operation: () => Promise<unknown>, onSuccess?: () => void, onError?: (message: string) => void) {
         if (lock.current || blocked || loading) return;
         lock.current = true; setWriting(true); onBusyChange(true); setError(''); setNotice('');
         try {
             await operation();
             if (mounted.current) { writeConfirmed.current = true; onSuccess?.(); setNotice('Cambio guardado. La lista muestra los resultados de los filtros actuales.'); setRevision(v => v + 1); }
         } catch (err) {
-            if (mounted.current) { setError(errorMessage(err)); if (isUnauthorized(err)) onUnauthorized(); }
+            if (mounted.current) { const message = errorMessage(err); if (onError) onError(message); else setError(message); if (isUnauthorized(err)) onUnauthorized(); }
         } finally {
             lock.current = false;
             if (mounted.current) setWriting(false);
@@ -72,13 +74,14 @@ export function TasksPanel({ day, dashboard, blocked, onUnauthorized, onBusyChan
         }
     }
     function edit(task: Task) {
+        setEditorError('');
         setEditor({ id: task.id, draft: { title: task.title, description: task.description,
             priority: task.priority, category: task.category, due_date: task.due_date } });
     }
     function updateDraft(patch: Partial<TaskInput>) { setEditor(value => value ? { ...value, draft: { ...value.draft, ...patch } } : null); }
     const progress = current?.progress;
     return <section className="card tasks-card" aria-labelledby="tasks-title" aria-busy={loading || writing}>
-        <div className="card-heading"><div><span className="eyebrow">PASO A PASO</span><h2 id="tasks-title">{dashboard ? 'Tus tareas del día' : 'Tus tareas'}</h2></div><button className="soft-button" disabled={disabled} onClick={() => setEditor({ draft: blank(day) })}><Icon name="plus" size={16}/>Nueva tarea</button></div>
+        <div className="card-heading"><div><span className="eyebrow">PASO A PASO</span><h2 id="tasks-title">{dashboard ? 'Tus tareas del día' : 'Tus tareas'}</h2></div><button className="soft-button" disabled={disabled} onClick={() => { setEditorError(''); setEditor({ draft: blank(day) }); }}><Icon name="plus" size={16}/>Nueva tarea</button></div>
         <form className="task-quick-form" onSubmit={e => { e.preventDefault(); void change(() => api.createTask({ ...blank(day), title: title.trim() }), () => setTitle('')); }}>
             <Icon name="plus" size={18}/><label className="sr-only" htmlFor="quick-task">Título de la nueva tarea</label>
             <input id="quick-task" value={title} required maxLength={80} disabled={disabled} onChange={e => setTitle(e.target.value)} placeholder="¿Qué te gustaría completar hoy?"/>
@@ -95,13 +98,13 @@ export function TasksPanel({ day, dashboard, blocked, onUnauthorized, onBusyChan
             <label>Prioridad<select value={priority} onChange={e => { setPriority(e.target.value as Priority | ''); setOffset(0); }}><option value="">Todas</option><option value="alta">Alta</option><option value="media">Media</option><option value="baja">Baja</option></select></label>
             <label>Fecha<select value={dateMode} onChange={e => { setDateMode(e.target.value as typeof dateMode); setOffset(0); }}><option value="selected">Vencen el {day}</option><option value="any">Cualquier fecha</option><option value="undated">Sin fecha límite</option></select></label>
         </fieldset>
-        {editor && <form className="block-form task-editor" onSubmit={e => { e.preventDefault(); const { id, draft } = editor; void change(() => id ? api.updateTask(id, draft) : api.createTask(draft), () => setEditor(null)); }}><fieldset disabled={disabled}><legend>{editor.id ? 'Editar tarea' : 'Nueva tarea'}</legend>
-            <label>Título<input value={editor.draft.title} required maxLength={80} onChange={e => updateDraft({ title: e.target.value })}/></label>
-            <label>Descripción opcional<textarea value={editor.draft.description || ''} maxLength={2000} rows={3} onChange={e => updateDraft({ description: e.target.value || null })}/></label>
-            <div className="form-row"><label>Prioridad<select value={editor.draft.priority} onChange={e => updateDraft({ priority: e.target.value as Priority })}>{['baja', 'media', 'alta'].map(p => <option key={p} value={p}>{p}</option>)}</select></label><label>Categoría<select value={editor.draft.category} onChange={e => updateDraft({ category: e.target.value as Category })}>{Object.entries(categories).map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label></div>
-            <label>Fecha límite opcional<input type="date" min="0001-01-01" max="9999-12-31" value={editor.draft.due_date || ''} onChange={e => updateDraft({ due_date: e.target.value || null })}/></label>
-            <div className="form-row"><button className="primary" disabled={!editor.draft.title.trim()}>Guardar tarea</button><button type="button" className="text-button" onClick={() => setEditor(null)}>Cancelar</button></div>
-        </fieldset></form>}
+        {editor && <TaskEditor id={editor.id} draft={editor.draft} busy={writing} error={editorError}
+            onChange={updateDraft} onClose={() => { if (!writing) { setEditor(null); setEditorError(''); } }}
+            onSubmit={() => {
+                const { id, draft } = editor;
+                setEditorError('');
+                void change(() => id ? api.updateTask(id, draft) : api.createTask(draft), () => setEditor(null), setEditorError);
+            }}/>}
         {error && <div className="alert" role="alert">{error}<button className="text-button" disabled={disabled || loading} onClick={() => setRevision(v => v + 1)}>Reintentar consulta</button></div>}
         {notice && <p className="tiny muted" role="status">{notice}</p>}
         {loading ? <p className="empty-copy" role="status">Cargando tareas…</p> : current ? <TaskList tasks={current.page.items} disabled={disabled} onEdit={edit} onComplete={task => void change(() => api.updateTask(task.id, { completed: !task.completed }))} onDelete={task => { if (window.confirm(`¿Eliminar la tarea «${task.title}»?`)) void change(() => api.deleteTask(task.id), () => { if (editor?.id === task.id) setEditor(null); }); }}/>

@@ -67,6 +67,7 @@ def test_two_account_isolation(application, signed_in, credentials, block_data, 
         for done in [True, False]:
             assert other.put(check_path, json={"done": done}).status_code == 404
         assert other.delete(f"/api/habits/{habit_id}").status_code == 404
+        assert other.put(f"/api/habits/{habit_id}", json={"name": "Ajeno"}).status_code == 404
         assert other.put(f"/api/blocks/{block_id}", json={**block_data, "title": "Intrusión"}).status_code == 404
         assert other.delete(f"/api/blocks/{block_id}").status_code == 404
     data = owner.get(f"/api/days/{DAY}").json()
@@ -78,6 +79,8 @@ def test_two_account_isolation(application, signed_in, credentials, block_data, 
 @pytest.mark.parametrize("name", ["", "   ", "x" * 81])
 def test_invalid_habit_name(signed_in, name):
     assert signed_in.post("/api/habits", json={"name": name}).status_code == 422
+    habit_id = signed_in.post("/api/habits", json={"name": "Original"}).json()["id"]
+    assert signed_in.put(f"/api/habits/{habit_id}", json={"name": name}).status_code == 422
 
 
 @pytest.mark.parametrize("change", [
@@ -122,10 +125,13 @@ def test_invalid_ids(signed_in, block_data, item_id):
     assert signed_in.delete(f"/api/blocks/{item_id}").status_code == 422
     assert signed_in.put(f"/api/blocks/{item_id}", json=block_data).status_code == 422
     assert signed_in.delete(f"/api/habits/{item_id}").status_code == 422
+    assert signed_in.put(f"/api/habits/{item_id}", json={"name": "Nuevo"}).status_code == 422
 
 
-def test_check_validation_and_current_habit_contract(signed_in):
+def test_check_validation_and_habit_editing(signed_in):
     habit_id = signed_in.post("/api/habits", json={"name": "Leer"}).json()["id"]
     assert signed_in.put(f"/api/habits/{habit_id}/checks/{DAY}", json={"done": "invalid"}).status_code == 422
-    # No se introduce edición de hábitos en esta etapa: el contrato actual es 405.
-    assert signed_in.put(f"/api/habits/{habit_id}", json={"name": "Nuevo"}).status_code == 405
+    assert signed_in.put(f"/api/habits/{habit_id}/checks/{DAY}", json={"done": True}).status_code == 204
+    assert signed_in.put(f"/api/habits/{habit_id}", json={"name": "  Nuevo  "}).status_code == 204
+    assert signed_in.get(f"/api/days/{DAY}").json()["habits"] == [{"id": habit_id, "name": "Nuevo", "done": True}]
+    assert signed_in.put("/api/habits/2147483647", json={"name": "No existe"}).status_code == 404

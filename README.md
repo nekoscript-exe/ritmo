@@ -123,8 +123,8 @@ Cobertura preparada:
   de modificaciones cruzadas, incluido el intento de enviar un propietario falso.
 - Creación, lectura, marcado/desmarcado idempotente y eliminación de hábitos con cascada.
 - CRUD de bloques, vista semanal, categorías, fechas límite y validaciones en creación y edición.
-- No existe actualización de nombre de hábito: la prueba documenta el `405` actual.
-  No se añade esa función en esta etapa.
+- En la etapa 1 no existía edición de hábitos. La mejora de modales añade actualización
+  de nombre por `PUT /api/habits/{id}`, conservando marcas e historial.
 
 Para detener y retirar **solo los contenedores y la red de pruebas** cuando ya no
 se necesiten:
@@ -466,3 +466,126 @@ ejecutaron: el socket de Docker devuelve `permission denied`. Tampoco se ejecut�
 migración ni el recorrido de respaldo/restauración sobre una base. La integración
 frontend usa `fetch` simulado y renderizado de componentes; no certifica todavía una
 sesión real de navegador contra PostgreSQL.
+
+
+## Formularios en modal — tareas y hábitos
+
+Los editores completos salen del flujo del dashboard y usan un componente compartido
+`Modal`, basado en `<dialog>` y `showModal()`. Se conserva la captura rápida superior de
+tareas; «Nueva tarea» y los botones de editar abren el modal con datos vacíos o precargados.
+«Nuevo hábito» abre una variante pequeña y cada hábito tiene un botón de edición.
+No se cambia el diseño de las tarjetas ni se elimina la interfaz anterior.
+
+El diálogo nativo mantiene el resto de la página inerte y contiene el foco. Se enfoca
+el primer campo al abrir y se devuelve el foco al disparador al cerrar (o al contenido
+principal si el disparador ya no está disponible). Se bloquea el scroll del fondo y el
+formulario puede desplazarse en pantallas pequeñas. Se respeta movimiento reducido.
+
+Se puede cerrar mediante X, Cancelar, Esc o un clic en el fondo superpuesto. Pulsar o
+seleccionar texto dentro de la tarjeta no la cierra; arrastrar desde dentro hacia fuera
+tampoco descarta la edición. Cerrar sin guardar descarta el borrador. Mientras se guarda
+se deshabilitan controles y cierre, con un mensaje de espera. Un fallo mantiene el modal,
+los valores y el mensaje de error; el cierre solo se realiza tras confirmar el guardado.
+Si falla después la recarga de la lista, se conserva el aviso existente de cambio guardado.
+
+Para permitir edición real de hábitos se añade `PUT /api/habits/{habit_id}` con cuerpo
+`{"name":"Nuevo nombre"}`. Devuelve `204`; valida la misma etiqueta de 1 a 80 caracteres,
+actualiza únicamente el nombre y exige propietario en el SQL. IDs ajenos o inexistentes
+responden `404`. No hay migraciones nuevas ni cambios de esquema. La API anterior debe
+reconstruirse para que la edición de nombre funcione; las demás operaciones conservan
+sus endpoints y comportamiento.
+
+### Verificación
+
+```sh
+npm --prefix frontend test
+npm --prefix frontend run build
+```
+
+La suite incluye apertura/cierre del diálogo con adaptadores DOM, foco inicial/restauración,
+scroll, detección del fondo, protección durante el guardado, renderizado de ambos editores,
+precarga de campos, errores y contrato HTTP de edición de hábitos. Estas comprobaciones
+no sustituyen la interacción nativa en un navegador. Las pruebas PostgreSQL existentes
+se amplían para comprobar nombre actualizado sin perder marcas, validaciones, sesión
+y aislamiento. No se ejecutan contra la base principal.
+
+Para comprobar manualmente en la instalación temporal (puerto libre 5180):
+
+```sh
+docker compose -f compose.test.yaml -f compose.dashboard-test.yaml up --build -d --wait web-preview
+```
+
+1. Abrir `http://127.0.0.1:5180` con una cuenta de prueba.
+2. Pulsar «Nueva tarea»: el primer campo debe recibir el foco; Tab y Shift+Tab deben
+   permanecer dentro del diálogo. Verificar que no cambia el alto del dashboard.
+3. Guardar una tarea y editarla; comprobar título, descripción, prioridad, categoría
+   y fecha precargados. Confirmar que la captura rápida continúa funcionando.
+4. Pulsar «Nuevo hábito», guardar y editar el nombre. Comprobar que sus marcas se conservan.
+5. Comprobar por separado X, Esc, Cancelar y clic fuera; deben descartar el borrador y
+   devolver el foco. Los clics en el relleno interior no deben cerrar.
+6. Probar campos vacíos y límites de longitud. Simular un error de red en herramientas
+   de desarrollo: el modal debe conservar valores y mostrar el error, sin fingir éxito.
+7. Revisar en móvil el scroll del formulario y el fondo bloqueado. No usar cuentas ni
+   datos reales para estas comprobaciones.
+
+La validación local de esta mejora consta de 37 pruebas frontend y build TypeScript.
+La contención nativa del foco, Esc y el clic del backdrop requieren además la revisión
+manual en navegador. PostgreSQL y Docker se informan aparte si el entorno no permite
+acceder a sus servicios; no se consideran aprobados por el resultado del build.
+
+
+### Corrección de superposición: tareas, hábitos y bloques
+
+Se encontró un formulario inline en `Agenda`: «Añadir bloque» y «Editar» aún expandían
+contenido dentro de la tarjeta. Se sustituyó por `BlockEditor`, que comparte `Modal`
+con tareas y hábitos. Se retiraron esos formularios y estilos inline del dashboard;
+solo permanece la captura rápida de tareas. La interfaz legacy conserva su diseño anterior.
+
+Tareas y hábitos ya llamaban `showModal()` en el código inspeccionado; no fue posible
+reproducir su presentación inline en el navegador de este entorno. Para reforzar el
+comportamiento, todos los modales ahora se montan mediante portal directamente en `body`,
+se abren con `showModal()` en `useLayoutEffect` antes de pintar y usan `position: fixed`,
+`inset: 0` y márgenes automáticos. Un diálogo cerrado tiene `display: none`. No se usa
+el atributo `open` como sustituto de la apertura nativa. `::backdrop` oscurece el fondo.
+
+El bloqueo de scroll actúa sobre la raíz, conservando la anchura y restaurando el scroll
+al cerrar, sin sacar `body` de su flujo ni alterar los elementos sticky del dashboard.
+La altura máxima y el desplazamiento interno permiten utilizar formularios largos en
+móvil. Se mantienen X, Esc, Cancelar, clic fuera, foco inicial y devolución del foco.
+Los errores de bloques también aparecen dentro del modal; guardar solo cierra tras
+confirmar la operación. No hay cambios nuevos de API ni migraciones en esta corrección.
+
+**Importante para comprobar el resultado:** Nginx sirve un build copiado en su imagen;
+editar TSX o CSS no actualiza un contenedor ya construido. Para instalar solo la web
+nueva en la vista previa, sin iniciar ni recrear la API o PostgreSQL:
+
+```sh
+docker compose -f compose.test.yaml -f compose.dashboard-test.yaml build web-preview
+docker compose -f compose.test.yaml -f compose.dashboard-test.yaml up -d --no-deps web-preview
+```
+
+Recargar `http://127.0.0.1:5180/` (no `/legacy.html`) y comprobar crear/editar tareas,
+hábitos y bloques. El encabezado y las tarjetas no deben cambiar de posición ni altura.
+En las herramientas del navegador, `document.querySelector('dialog:modal')` debe encontrar
+el diálogo y su padre debe ser `document.body`.
+
+#### Comprobación visual sin API ni datos reales
+
+Se incluye una página de regresión, solo para desarrollo. Usa los componentes reales,
+permite abrir seis variantes (crear/editar de cada módulo) y mide top layer, portal,
+centrado, rectángulo del dashboard, foco inicial, bloqueo y backdrop. No realiza CRUD,
+no consulta la API y guardar solo cierra la prueba. No se incorpora al build de producción.
+
+```sh
+npm --prefix frontend run dev
+```
+
+Abrir `http://127.0.0.1:5173/tests/modal-preview.html`. Vite falla si el puerto está ocupado;
+se puede elegir otro libre con `-- --port 5175`. Cada apertura muestra PASS/FAIL medidos
+en ese navegador. Verificar además Tab/Shift+Tab, Esc, X, Cancelar y clic fuera, tanto en
+escritorio como en móvil y después de desplazar la página.
+
+La suite local tiene 40 pruebas frontend aprobadas y el build incluye chequeo TypeScript
+de la página de regresión. El navegador de herramientas está indisponible, por lo que
+las mediciones visuales de esa página **siguen pendientes de ejecución**; los tests con
+adaptadores DOM y renderizado estático no prueban geometría real por sí solos.
