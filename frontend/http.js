@@ -1,3 +1,5 @@
+import { apiConfig } from './config.js';
+
 const fields = {
   username: "Usuario", password: "Contraseña", name: "Nombre del hábito",
   title: "Título", day: "Fecha", starts_at: "Hora de inicio",
@@ -47,12 +49,12 @@ export function httpMessage(status, result = {}) {
   })[status] || `No se pudo completar la operación (HTTP ${status}).`;
 }
 
-export async function requestJSON(path, method = "GET", body, timeoutMs = 15000) {
+export async function requestJSON(path, method = "GET", body, timeoutMs = apiConfig.timeoutMs) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetch("/api" + path, {
-      method, signal: controller.signal,
+    const response = await fetch(apiConfig.baseURL + path, {
+      method, signal: controller.signal, credentials: apiConfig.credentials,
       headers: body === undefined ? undefined : { "Content-Type": "application/json" },
       body: body === undefined ? undefined : JSON.stringify(body),
     });

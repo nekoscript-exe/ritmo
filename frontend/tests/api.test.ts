@@ -6,7 +6,7 @@ test('adaptador usa endpoints existentes, separa hábitos y bloques y conserva l
   const calls: { path: string; method: string; body: unknown }[] = [];
   t.mock.method(globalThis, 'fetch', async (path: string, options: RequestInit) => {
     calls.push({ path, method: options.method!, body: options.body ? JSON.parse(String(options.body)) : undefined });
-    assert.equal(options.credentials, undefined); // fetch usa same-origin, sin tokens en JS.
+    assert.equal(options.credentials, 'same-origin'); // Sin tokens en JS.
     return new Response(null, { status: 204 });
   });
   const block = { title: 'Real', day: '2026-11-09', starts_at: '09:00', ends_at: '10:00', category: 'personal' as const };

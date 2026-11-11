@@ -48,4 +48,7 @@ export interface TaskFilters {
 }
 export interface TaskPage { items: Task[]; total: number; limit: number; offset: number }
 export interface TaskProgress { day: string; total: number; completed: number; percent: number }
+export interface CalendarBlock extends Block { day: string }
+export interface CalendarData { start: string; end: string; blocks: CalendarBlock[]; tasks: Task[] }
+export type CalendarView = 'day' | 'week' | 'month';
 export type Section = 'Dashboard' | 'Tareas' | 'Calendario' | 'Hábitos' | 'Focus' | 'Estadísticas';

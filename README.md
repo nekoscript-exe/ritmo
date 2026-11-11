@@ -589,3 +589,113 @@ La suite local tiene 40 pruebas frontend aprobadas y el build incluye chequeo Ty
 de la página de regresión. El navegador de herramientas está indisponible, por lo que
 las mediciones visuales de esa página **siguen pendientes de ejecución**; los tests con
 adaptadores DOM y renderizado estático no prueban geometría real por sí solos.
+
+## Ritmo 2.2 — calendario avanzado
+
+El apartado Calendario incorpora **Día, Semana y Mes** conservando sidebar, barra superior,
+paleta menta y modales. Seleccionar un día del pequeño calendario del Dashboard abre
+esa fecha en la vista diaria del calendario avanzado.
+
+- **Día:** tareas con vencimiento en la fecha, separadas como «sin horario», y bloques
+  ordenados por hora de inicio. No se convierten tareas en bloques.
+- **Semana:** siete columnas de lunes a domingo en escritorio, bloques posicionados en
+  el horario de 00 a 24 h y carriles para solapamientos; las tareas se muestran aparte
+  sin inventar una hora. En móvil se apilan siete agendas diarias para evitar overflow.
+- **Mes:** indicadores T/B por día y hasta tres accesos a actividades por celda. «Ver día»
+  abre la agenda completa. En móvil se priorizan contadores y acceso al día.
+- Seleccionar una actividad abre detalles con edición/eliminación. Las tareas también
+  permiten completar/reabrir. Crear y editar reutiliza `TaskEditor` y `BlockEditor`;
+  el calendario permite cambiar la fecha de un bloque, sin alterar el formulario del Dashboard.
+- Tareas sin vencimiento siguen en Tareas y no se asignan a una fecha ficticia.
+- Se distinguen carga, periodo vacío, fallo y guardado confirmado con recarga fallida.
+
+### Consulta eficiente y límites
+
+`GET /api/calendar?start=AAAA-MM-DD&end=AAAA-MM-DD` devuelve `start`, `end`, `tasks` y
+`blocks` (estos incluyen `day`). Los extremos son inclusivos, de 1 a 42 días. Se usa una
+transacción de lectura consistente y dos consultas filtradas por cuenta y fecha, con los
+índices existentes. No se modifica ninguna migración ni se añade una nueva.
+
+El mes requiere una única petición de calendario, no una por día. La aplicación aún puede
+consultar el día seleccionado para los contadores/hábitos existentes del dashboard; eso
+no genera una consulta por cada celda del mes. Cambiar Semana/Mes dentro del mismo rango
+no necesita lecturas por día.
+
+Se incluyen hasta 1000 tareas y 1000 bloques por intervalo. Si se supera cualquiera de
+esos límites, la API devuelve `413` y pide reducir el periodo, en lugar de mostrar datos
+parciales como completos. Las tareas sin fecha quedan fuera. Se conserva `Cache-Control:
+no-store`, sesión obligatoria y el filtro `account_id` en ambas consultas.
+
+### Código y configuración reutilizable
+
+- `api/calendar_routes.py`: contrato y lectura por intervalo.
+- `frontend/src/calendarDomain.ts`: fechas de negocio, navegación y carriles.
+- `frontend/src/calendarService.ts`: acceso a datos y operaciones existentes.
+- `frontend/src/components/calendar/`: vistas, detalles y coordinación.
+- `frontend/config.js`: base de API, timeout y credenciales compartidos con legacy.
+
+`VITE_API_BASE_URL` permite configurar un prefijo del mismo origen (por omisión `/api`)
+o un endpoint HTTPS. Consulta `frontend/.env.example`. No incluir secretos en variables
+VITE: son públicas. Una URL externa requiere adaptar y verificar CORS/cookies del servidor;
+esta configuración no lo hace automáticamente. El proxy de desarrollo permanece en Vite.
+
+La [propuesta multiplataforma](docs/multiplataforma.md) documenta reutilización React/TS,
+web/PWA, evaluación Tauri/Capacitor, autenticación, almacenamiento y sincronización futura.
+No hay instaladores, offline, service worker ni dependencias de esos runtimes en esta etapa.
+
+### Verificación segura
+
+```sh
+npm --prefix frontend ci
+npm --prefix frontend test
+npm --prefix frontend run build
+```
+
+Se mantienen las pruebas previas y se añaden nueve pruebas frontend: intervalos, año
+bisiesto/límites, navegación, carriles, vistas, estado de carga, contrato de consulta única,
+errores y configuración portable. **Resultado local: 49 pruebas frontend aprobadas y build
+TypeScript correcto.** Dieciséis casos nuevos de PostgreSQL comprueban inclusión de
+extremos, intervalos inválidos, pertenencia, límites, orden y lectura tras escritura.
+
+Docker devuelve `permission denied` en este entorno: no se ejecutaron esos casos de
+PostgreSQL ni se construyeron/recrearon contenedores. La validación de configuración
+Compose, sintaxis Python y `git diff --check` sí se puede ejecutar sin conectar a una base.
+No se ha realizado una revisión visual de escritorio/móvil en navegador.
+
+Para probar PostgreSQL temporal, detén solo la API de vista previa si ya existe, sin
+parar `db-test`. No combinar estos archivos con el Compose principal:
+
+```sh
+docker compose -f compose.test.yaml -f compose.dashboard-test.yaml stop api-preview
+docker compose -f compose.test.yaml build tests
+docker compose -f compose.test.yaml up -d --wait db-test
+docker compose -f compose.test.yaml run --rm --no-deps tests
+```
+
+Ejecuta cada comando solo si el anterior terminó correctamente. Para abrir la vista
+previa completa (elegir un puerto libre; 5180 por omisión):
+
+```sh
+docker compose -f compose.test.yaml -f compose.dashboard-test.yaml up --build -d --wait web-preview
+```
+
+Abre `http://127.0.0.1:5180` y usa una cuenta sintética. Crear tareas con distintos
+vencimientos y bloques con horas solapadas; revisar las tres vistas, navegación, detalles,
+edición/reapertura y eliminación. Probar también otra cuenta, fecha bisiesta, móvil y
+fallo de red. El calendario no debe reemplazar un error con una lista vacía.
+
+Para desarrollo React con ese backend temporal:
+
+```sh
+RITMO_API_PROXY_TARGET=http://127.0.0.1:5180 npm --prefix frontend run dev
+```
+
+Abrir `http://127.0.0.1:5173`. `strictPort` evita ocupar otro puerto si está en uso.
+La API temporal aplica las migraciones que ya existan en esta rama; no reiniciar la API
+principal sin revisar las migraciones pendientes de entregas anteriores. Esta iteración
+no toca datos reales, volúmenes ni la rama main, y no crea commits ni push.
+
+Limitaciones: no hay arrastrar/soltar, recurrencias, calendario compartido, integración
+con calendarios del sistema, alarmas nativas ni sincronización offline. Las fechas límite
+no tienen hora; los bloques conservan su horario local flotante y no cruzan medianoche.
+La revisión en navegador y la ejecución de PostgreSQL temporal siguen pendientes.

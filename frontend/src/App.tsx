@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { api, errorMessage, isUnauthorized } from './api';
-import type { DayData, Section } from './models';
+import type { DayData, Section, CalendarView } from './models';
 import { greeting, localDay, parseDay } from './domain';
 import { Icon } from './components/Icon';
 import { Landscape } from './components/Landscape';
@@ -10,6 +10,7 @@ import { FocusTimer } from './components/FocusTimer';
 import { Habits } from './components/Habits';
 import { Agenda } from './components/Agenda';
 import { TasksPanel } from './components/TasksPanel';
+import { CalendarWorkspace } from './components/calendar/CalendarWorkspace';
 const navigation: [
     Section,
     string
@@ -29,6 +30,7 @@ export function App() {
     const [error, setError] = useState('');
     const [notice, setNotice] = useState('');
     const [section, setSection] = useState<Section>('Dashboard');
+    const [calendarView, setCalendarView] = useState<CalendarView>('week');
     const [query, setQuery] = useState('');
     const lock = useRef(false);
     const data = result?.day === day ? result.data : null;
@@ -147,16 +149,17 @@ export function App() {
     <div className="main-shell"><header className="topbar"><label className="search"><Icon name="search" size={18}/><span className="sr-only">Buscar hábitos y bloques del día</span><input type="search" placeholder="Buscar en tu día…" value={query} onChange={e => setQuery(e.target.value)}/></label><div className="topbar-actions"><button className="export-button" disabled={disabled} onClick={exportDay}><Icon name="export" size={17}/><span>Exportar día</span></button><button className="icon-button notification-button" aria-label="Notificaciones: información de disponibilidad" onClick={() => setNotice('Las notificaciones aún no están disponibles. No hay un servicio de avisos conectado.')}><Icon name="bell"/></button><details className="profile"><summary aria-label="Abrir perfil"><span className="avatar">{identity ? identity[0].toUpperCase() : <Icon name="leaf" size={18}/>}</span><span>{identity || 'Mi cuenta'}</span><span className="profile-chevron">⌄</span></summary><div className="profile-menu"><strong>{identity || 'Sesión activa'}</strong><p>La sesión se verifica en el servidor. El nombre aparece tras iniciar sesión en esta pestaña.</p><button className="text-button" disabled={busy || loading} onClick={() => void logout()}>Cerrar sesión</button></div></details></div></header>
     <main id="main" tabIndex={-1}><div className="page-heading"><div><p className="eyebrow">TU DÍA, CON INTENCIÓN</p><h1>{section === 'Dashboard' ? 'Mi dashboard' : section}</h1></div><span className="current-date"><span className="date-dot"/>{new Intl.DateTimeFormat('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }).format(now)}</span></div>
       {alert}{notice && <div className="notice" role="status">{notice}<button className="text-button" onClick={() => setNotice('')}>Cerrar</button></div>}
-      <div className="dashboard-grid"><div className="content-column">
-        {isDashboard && <section className="welcome-card"><div className="welcome-copy"><span className="welcome-label"><span />UN NUEVO MOMENTO PARA TI</span><h2>{greeting(now.getHours())}{identity ? `, ${identity}` : ''}<span className="welcome-wave">☀</span></h2><p>No necesitas hacerlo todo.<br />Solo empieza por lo que importa.</p><div className="welcome-summary">{data ? <><strong>{data.blocks.length}</strong> bloques en agenda <span>·</span><strong>{completed}/{data.habits.length}</strong> hábitos completados</> : 'Consultando tu actividad…'}</div><button className="welcome-link" onClick={() => setSection('Calendario')}>Vamos a tu día <Icon name="arrow" size={17}/></button></div><Landscape /></section>}
+      <div className={`dashboard-grid ${section === 'Calendario' ? 'calendar-layout' : ''}`}><div className="content-column">
+        {isDashboard && <section className="welcome-card"><div className="welcome-copy"><span className="welcome-label"><span />UN NUEVO MOMENTO PARA TI</span><h2>{greeting(now.getHours())}{identity ? `, ${identity}` : ''}<span className="welcome-wave">☀</span></h2><p>No necesitas hacerlo todo.<br />Solo empieza por lo que importa.</p><div className="welcome-summary">{data ? <><strong>{data.blocks.length}</strong> bloques en agenda <span>·</span><strong>{completed}/{data.habits.length}</strong> hábitos completados</> : 'Consultando tu actividad…'}</div><button className="welcome-link" onClick={() => { setCalendarView('day'); setSection('Calendario'); }}>Vamos a tu día <Icon name="arrow" size={17}/></button></div><Landscape /></section>}
         {section === 'Tareas' && <label className="task-date-picker">Fecha para tareas y progreso<input type="date" min="0001-01-01" max="9999-12-31" value={day} disabled={busy || loading} onChange={e => { if (e.target.validity.valid && e.target.value) setDay(e.target.value); }}/></label>}
         {(isDashboard || section === 'Tareas') && <TasksPanel day={day} dashboard={isDashboard} blocked={busy || loading} onUnauthorized={expire} onBusyChange={setBusy}/>}
-        {(isDashboard || section === 'Calendario') && <><div className="selected-date"><h2>{localDay(now) === day ? 'Hoy' : 'Día seleccionado'}</h2><label><span className="sr-only">Fecha de la agenda</span><input type="date" min="0001-01-01" max="9999-12-31" value={day} disabled={busy || loading} onChange={e => { if (e.target.validity.valid && e.target.value)
+        {isDashboard && <><div className="selected-date"><h2>{localDay(now) === day ? 'Hoy' : 'Día seleccionado'}</h2><label><span className="sr-only">Fecha de la agenda</span><input type="date" min="0001-01-01" max="9999-12-31" value={day} disabled={busy || loading} onChange={e => { if (e.target.validity.valid && e.target.value)
         setDay(e.target.value); }}/></label></div>{data ? <Agenda day={day} blocks={data.blocks} busy={disabled} query={query} mutate={mutate}/> : <div className="card loading-card" role="status">{loading ? 'Cargando agenda…' : 'La agenda no está disponible. Reintenta la consulta.'}</div>}</>}
+        {section === 'Calendario' && <CalendarWorkspace day={day} view={calendarView} onDayChange={setDay} onViewChange={setCalendarView} blocked={busy || loading} onBusyChange={setBusy} onUnauthorized={expire} onChanged={() => setEpoch(v => v + 1)}/>}
         {(isDashboard || section === 'Hábitos') && (data ? <Habits day={day} habits={data.habits} busy={disabled} query={query} mutate={mutate}/> : <div className="card loading-card" role="status">{loading ? 'Cargando hábitos…' : 'Los hábitos no están disponibles.'}</div>)}
         {section === 'Estadísticas' && <section className="card stats-card"><span className="round-icon"><Icon name="stats"/></span><h2>Tu constancia, día a día</h2><p className="muted">Resumen de la fecha seleccionada, calculado con tus datos.</p>{data ? <div className="stats-values"><div><strong>{data.blocks.length}</strong><span>bloques de horario</span></div><div><strong>{completed}/{data.habits.length}</strong><span>hábitos completados</span></div></div> : <p>Resumen no disponible.</p>}<p className="tiny muted">Las tendencias y el historial estadístico están pendientes.</p></section>}
         {section === 'Focus' && <section className="card focus-intro"><span className="eyebrow">BAJA EL RUIDO</span><h2>Haz una pausa.<br />Encuentra tu concentración.</h2><p className="muted">Elige una duración en el temporizador y dedica este momento a una sola cosa.</p><Landscape /></section>}
-      </div><aside className="right-column" aria-label="Calendario y concentración"><Calendar selected={day} disabled={busy || loading} onSelect={setDay}/><FocusTimer /><div className="daily-note"><Icon name="leaf" size={22}/><p>«No se trata de tener tiempo.<br />Se trata de hacer espacio.»</p><span>ENCUENTRA TU RITMO</span></div></aside></div>
+      </div><aside className={`right-column ${section === 'Calendario' ? 'calendar-aux' : ''}`} aria-label="Calendario y concentración"><Calendar selected={day} disabled={busy || loading} onSelect={date => { setDay(date); if (isDashboard) { setCalendarView('day'); setSection('Calendario'); } }}/><FocusTimer /><div className="daily-note"><Icon name="leaf" size={22}/><p>«No se trata de tener tiempo.<br />Se trata de hacer espacio.»</p><span>ENCUENTRA TU RITMO</span></div></aside></div>
       <footer className="page-footer"><span>Hecho para avanzar con calma.</span><span>Ritmo · Tu espacio, a tu ritmo.</span></footer>
     </main></div></div>;
 }

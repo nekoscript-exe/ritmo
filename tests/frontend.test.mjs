@@ -3,8 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import vm from "node:vm";
 
-const httpSource = await readFile(new URL("../frontend/http.js", import.meta.url), "utf8");
-const { requestJSON, httpMessage } = await import("data:text/javascript;base64," + Buffer.from(httpSource).toString("base64"));
+import { requestJSON, httpMessage } from '../frontend/http.js';
 const appSource = (await readFile(new URL("../frontend/app.js", import.meta.url), "utf8"))
   .replace(/^import \{ requestJSON \} from "\.\/http.js";\n/m, "");
 

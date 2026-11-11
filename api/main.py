@@ -9,6 +9,7 @@ from pydantic import BaseModel, StringConstraints, model_validator
 from auth import account, router
 from db import connect, migrate
 from tasks import router as tasks_router
+from calendar_routes import router as calendar_router
 
 Label = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)]
 Account = Annotated[int, Depends(account)]
@@ -51,6 +52,7 @@ app = FastAPI(title="Ritmo", lifespan=lifespan, docs_url="/api/docs",
 
 app.include_router(router)
 app.include_router(tasks_router)
+app.include_router(calendar_router)
 
 
 @app.get("/api/health")

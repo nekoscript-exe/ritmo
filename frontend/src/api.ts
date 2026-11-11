@@ -1,5 +1,5 @@
 import { requestJSON } from '../http.js';
-import type { BlockInput, DayData, Task, TaskInput, TaskFilters, TaskPage, TaskProgress } from './models';
+import type { BlockInput, DayData, Task, TaskInput, TaskFilters, TaskPage, TaskProgress, CalendarData } from './models';
 export function taskQuery(filters: TaskFilters): string {
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(filters)) {
@@ -8,6 +8,7 @@ export function taskQuery(filters: TaskFilters): string {
     return params.toString();
 }
 export const api = {
+    calendar: (start: string, end: string): Promise<CalendarData> => requestJSON(`/calendar?${new URLSearchParams({ start, end })}`, 'GET', undefined),
     tasks: (filters: TaskFilters = {}): Promise<TaskPage> => requestJSON(`/tasks?${taskQuery(filters)}`, 'GET', undefined),
     task: (id: number): Promise<Task> => requestJSON(`/tasks/${id}`, 'GET', undefined),
     taskProgress: (day: string): Promise<TaskProgress> => requestJSON(`/tasks/progress/${day}`, 'GET', undefined),
